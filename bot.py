@@ -1,19 +1,37 @@
 # bot.py
 import os
+import psycopg2
 import random
 from dotenv import load_dotenv
 
 from discord.ext import commands
 
+
+try:
+    conn = psycopg2.connect(
+            user = "wang",
+            password = "password",
+            host = "127.0.0.1",
+            port = "5432",
+            database = "botdb")
+
+    cur = conn.cursor()
+except Exception as e:
+    print("gay:", e)
+
 load_dotenv()
-token = os.getenv('DISCORD_TOKEN')
-guild = os.getenv('DISCORD_GUILD')
+TOKEN = os.getenv('DISCORD_TOKEN')
+GUILD = os.getenv('DISCORD_GUILD')
 
 bot = commands.Bot(command_prefix='!')
 
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
+
+    for guild in bot.guilds:
+        print(guild.members)
+
 
 
 @bot.command(name='yes', help='yes')
@@ -52,5 +70,5 @@ async def on_message(message):
     print(f'{message.author}\n{message.content}\n')
 '''
 
-bot.run(token)
+bot.run(TOKEN)
 
