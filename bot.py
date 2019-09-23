@@ -17,26 +17,23 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    if message.author == bot.user:
-        return
+    with open('message.log', 'a') as f:
+        f.write(f'{message.author}\n{message.content}\n')
+    print(f'{message.author}\n{message.content}\n')
 
+@bot.command(name='yes')
+async def yes(ctx):
     someShit = [
-            'I am bot created by Ronny, Amazing.',
-            'Ronny\'s bot I am.',
-            'Currently working on bot code.',
             'Yes',
-            'Yes',
-            'Maybe'
     ]
 
-    if 'xd' in message.content.lower():
-        response = random.choice(someShit)
-        await message.channel.send(response)
-    elif message.content == 'raise-exception':
-        raise discord.DiscordException
+    response = random.choice(someShit)
+    await ctx.send(response)
+    print(f'Someone used !yes command')
 
 @bot.event
 async def on_error(event, *args, **kwargs):
+    print(f'{args[0]}')
     with open('err.log', 'a') as f:
         if event == 'on_message':
             f.write(f'Unhandled message: {args[0]}\n')
@@ -45,19 +42,3 @@ async def on_error(event, *args, **kwargs):
 
 bot.run(token)
 
-'''
-client = discord.Client()
-
-@client.event
-async def on_ready():
-    guild = discord.utils.get(client.guilds, name=guild)
-    print(
-        f'{client.user} has connected to the following guild:\n'
-        f'{guild.name}(id: {guild.id})'
-    )
-
-    members = '\n - '.join([member.name for member in guild.members])
-    print(f'Guild Members:\n - {members}')
-
-client.run(token)
-'''
