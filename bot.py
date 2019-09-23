@@ -29,8 +29,8 @@ bot = commands.Bot(command_prefix='!')
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
 
-    for guild in bot.guilds:
-        print(guild.members)
+#    for guild in bot.guilds:
+#        print(guild.members)
 
 
 
@@ -52,6 +52,13 @@ async def roll(ctx, number_of_dice: int, number_of_sides: int):
     ]
     await ctx.send(', '.join(dice))
 
+@bot.command(name='coinflip')
+async def coinflip(ctx):
+    sides = [
+        '**HEADS**',
+        '**TAILS**'
+    ]
+    await ctx.send(random.choice(sides))
 
 @bot.event
 async def on_error(event, *args, **kwargs):
@@ -62,13 +69,12 @@ async def on_error(event, *args, **kwargs):
         else:
             raise
 
-'''
 @bot.event
 async def on_message(message):
     with open('message.log', 'a') as f:
         f.write(f'{message.author}\n{message.content}\n')
     print(f'{message.author}\n{message.content}\n')
-'''
+    await bot.process_commands(message)
 
 bot.run(TOKEN)
 
