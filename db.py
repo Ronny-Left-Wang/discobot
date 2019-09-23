@@ -16,7 +16,7 @@ try:
     cur.execute("""
     CREATE TABLE users (
         user_id SERIAL PRIMARY KEY,
-        discord_id INTEGER NOT NULL,
+        discord_id BIGINT UNIQUE NOT NULL,
         exp INTEGER NOT NULL,
         gold INTEGER NOT NULL
     )""")

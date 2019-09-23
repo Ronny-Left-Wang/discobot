@@ -17,7 +17,7 @@ try:
 
     cur = conn.cursor()
 except Exception as e:
-    print("gay:", e)
+    print("huh:", e)
 
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
@@ -28,11 +28,18 @@ bot = commands.Bot(command_prefix='!')
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
+    test = 1
 
-#    for guild in bot.guilds:
-#        print(guild.members)
-
-
+    for guild in bot.guilds:
+        for member in guild.members:
+            print(member, str(member.id))
+            cur.execute("""
+                    INSERT INTO users (discord_id, exp, gold)
+                    VALUES
+                    (""" + str(member.id) + """, 0, 0)
+                    ON CONFLICT DO NOTHING
+            """)
+            conn.commit()
 
 @bot.command(name='yes', help='yes')
 async def yes(ctx):
@@ -42,7 +49,7 @@ async def yes(ctx):
 
     response = random.choice(someShit)
     await ctx.send(response)
-    print(f'Someone used !yes command')
+    print(f'Someone used the !yes command')
 
 @bot.command(name='roll', help='Try !roll 2 6')
 async def roll(ctx, number_of_dice: int, number_of_sides: int):
@@ -52,7 +59,7 @@ async def roll(ctx, number_of_dice: int, number_of_sides: int):
     ]
     await ctx.send(', '.join(dice))
 
-@bot.command(name='coinflip')
+@bot.command(name='coinflip', help='The name is obvious hahahaha')
 async def coinflip(ctx):
     sides = [
         '**HEADS**',
@@ -72,8 +79,18 @@ async def on_error(event, *args, **kwargs):
 @bot.event
 async def on_message(message):
     with open('message.log', 'a') as f:
-        f.write(f'{message.author}\n{message.content}\n')
-    print(f'{message.author}\n{message.content}\n')
+        f.write(f'{message.author}: {message.content}\n')
+    #THIS IS WHAT I WANT
+    #1. who sent message use discord id
+    #2. add 1 to exp
+    print(f'{message.author.id}: {message.content}\n')
+    hello = cur.execute("""
+        UPDATE users
+            SET exp = exp + 1
+        WHERE discord_id = '""" + str(message.author.id) + """';
+    """)
+    conn.commit()
+    print(hello)
     await bot.process_commands(message)
 
 bot.run(TOKEN)
