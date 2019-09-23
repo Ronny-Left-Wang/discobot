@@ -15,13 +15,8 @@ bot = commands.Bot(command_prefix='!')
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
 
-@bot.event
-async def on_message(message):
-    with open('message.log', 'a') as f:
-        f.write(f'{message.author}\n{message.content}\n')
-    print(f'{message.author}\n{message.content}\n')
 
-@bot.command(name='yes')
+@bot.command(name='yes', help='yes')
 async def yes(ctx):
     someShit = [
             'Yes',
@@ -31,6 +26,15 @@ async def yes(ctx):
     await ctx.send(response)
     print(f'Someone used !yes command')
 
+@bot.command(name='roll', help='Try !roll 2 6')
+async def roll(ctx, number_of_dice: int, number_of_sides: int):
+    dice = [
+        str(random.choice(range(1, number_of_sides + 1)))
+        for _ in range(number_of_dice)
+    ]
+    await ctx.send(', '.join(dice))
+
+
 @bot.event
 async def on_error(event, *args, **kwargs):
     print(f'{args[0]}')
@@ -39,6 +43,14 @@ async def on_error(event, *args, **kwargs):
             f.write(f'Unhandled message: {args[0]}\n')
         else:
             raise
+
+'''
+@bot.event
+async def on_message(message):
+    with open('message.log', 'a') as f:
+        f.write(f'{message.author}\n{message.content}\n')
+    print(f'{message.author}\n{message.content}\n')
+'''
 
 bot.run(token)
 
