@@ -67,9 +67,10 @@ async def coinflip(ctx):
     ]
     await ctx.send(random.choice(sides))
 
+
 @bot.event
 async def on_error(event, *args, **kwargs):
-    print(f'{args[0]}')
+    #print(f'{args[0]}')
     with open('err.log', 'a') as f:
         if event == 'on_message':
             f.write(f'Unhandled message: {args[0]}\n')
@@ -84,12 +85,15 @@ async def on_message(message):
     #1. who sent message use discord id
     #2. add 1 to exp
     print(f'{message.author.id}: {message.content}\n')
-    hello = cur.execute("""
+    cur.execute("""
         UPDATE users
-            SET exp = exp + 1
-        WHERE discord_id = '""" + str(message.author.id) + """';
-    """)
+        SET exp = exp + 1
+        WHERE discord_id = %s
+        RETURNING exp
+    """, (message.author.id,))
+    print(message.author.id)
     conn.commit()
+    hello = cur.fetchone()
     print(hello)
     await bot.process_commands(message)
 
