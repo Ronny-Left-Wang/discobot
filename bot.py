@@ -67,6 +67,15 @@ async def coinflip(ctx):
     ]
     await ctx.send(random.choice(sides))
 
+@bot.command(name='exp', help='Returns your exp')
+async def exp(ctx):
+    cur.execute("""
+        SELECT exp FROM users
+        WHERE discord_id = %s
+    """, (ctx.author.id,))
+    conn.commit()
+    totalExp = cur.fetchone()[0]
+    await ctx.send(f"{ctx.author.name} have {totalExp}!")
 
 @bot.event
 async def on_error(event, *args, **kwargs):
@@ -81,9 +90,6 @@ async def on_error(event, *args, **kwargs):
 async def on_message(message):
     with open('message.log', 'a') as f:
         f.write(f'{message.author}: {message.content}\n')
-    #THIS IS WHAT I WANT
-    #1. who sent message use discord id
-    #2. add 1 to exp
     print(f'{message.author.id}: {message.content}\n')
     cur.execute("""
         UPDATE users
@@ -91,10 +97,7 @@ async def on_message(message):
         WHERE discord_id = %s
         RETURNING exp
     """, (message.author.id,))
-    print(message.author.id)
     conn.commit()
-    hello = cur.fetchone()
-    print(hello)
     await bot.process_commands(message)
 
 bot.run(TOKEN)
