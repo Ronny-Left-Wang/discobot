@@ -5,6 +5,7 @@ import random
 from dotenv import load_dotenv
 
 from discord.ext import commands
+from discord.ext.commands import CommandNotFound
 
 
 try:
@@ -28,7 +29,6 @@ bot = commands.Bot(command_prefix='!')
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
-    test = 1
 
     for guild in bot.guilds:
         for member in guild.members:
@@ -41,6 +41,29 @@ async def on_ready():
             """)
             conn.commit()
 
+@bot.command(name='allExp', help='Shows server members\' exp')
+async def allExp(ctx):
+    print(ctx.__dict__)
+    members_map = {}
+    for guild in bot.guilds:
+        for member in guild.members:
+            members_map[member.id] = member.name
+
+    cur.execute("""
+        SELECT 
+            discord_id, exp 
+        FROM 
+            users
+        ORDER BY 
+            exp DESC
+    """)
+    conn.commit()
+    rows = cur.fetchall()
+    result = ""
+    for row in rows:
+        result += str(members_map[row[0]]) + " has [" + str(row[1]) + "] exp!\n"
+    await ctx.send(f"```ini\n{result}\n```")
+
 @bot.command(name='yes', help='yes')
 async def yes(ctx):
     someShit = [
@@ -48,8 +71,8 @@ async def yes(ctx):
     ]
 
     response = random.choice(someShit)
+    print(f'{ctx.author.name} used the !yes command')
     await ctx.send(response)
-    print(f'Someone used the !yes command')
 
 @bot.command(name='roll', help='Try !roll 2 6')
 async def roll(ctx, number_of_dice: int, number_of_sides: int):
@@ -59,7 +82,7 @@ async def roll(ctx, number_of_dice: int, number_of_sides: int):
     ]
     await ctx.send(', '.join(dice))
 
-@bot.command(name='coinflip', help='The name is obvious hahahaha')
+@bot.command(name='coinflip', help='Flips a coin')
 async def coinflip(ctx):
     sides = [
         '**HEADS**',
@@ -75,30 +98,37 @@ async def exp(ctx):
     """, (ctx.author.id,))
     conn.commit()
     totalExp = cur.fetchone()[0]
-    await ctx.send(f"{ctx.author.name} have {totalExp}!")
+    await ctx.send(f"{ctx.author.name} has {totalExp} exp!")
+
 
 @bot.event
-async def on_error(event, *args, **kwargs):
+async def on_error(ctx, *args, **kwargs):
     #print(f'{args[0]}')
     with open('err.log', 'a') as f:
-        if event == 'on_message':
+        if ctx == 'on_message':
             f.write(f'Unhandled message: {args[0]}\n')
         else:
             raise
 
 @bot.event
-async def on_message(message):
+async def on_command_error(ctx, error):
+    if isinstance(error, CommandNotFound):
+        await ctx.send("No such command")
+        # raise error
+
+@bot.event
+async def on_message(ctx):
     with open('message.log', 'a') as f:
-        f.write(f'{message.author}: {message.content}\n')
-    print(f'{message.author.id}: {message.content}\n')
+        f.write(f'{ctx.author}: {ctx.content}\n')
+    print(f'{ctx.author}: {ctx.content}')
     cur.execute("""
         UPDATE users
         SET exp = exp + 1
         WHERE discord_id = %s
         RETURNING exp
-    """, (message.author.id,))
+    """, (ctx.author.id,))
     conn.commit()
-    await bot.process_commands(message)
+    await bot.process_commands(ctx)
 
 bot.run(TOKEN)
 
