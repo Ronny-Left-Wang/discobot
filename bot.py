@@ -35,13 +35,14 @@ async def on_ready():
             cur.execute("""
                     INSERT INTO users (discord_id, exp, gold, level)
                     VALUES
-                    (""" + str(member.id) + """, 0, 0, 0)
+                    (""" + str(member.id) + """, 0, 1, 0)
                     ON CONFLICT DO NOTHING
             """)
             conn.commit()
 
-@bot.command(name='allExp', help='Shows server members\' exp')
+@bot.command(name='allexp', help='Shows server members\' exp')
 async def allExp(ctx):
+    #ctx.message.content = ctx.message.content.replace(" ", "")
     # ctx.mesage.guild does not contain members, but it does contain the context's guild ID
     # print(ctx.message.guild.id)
 
@@ -51,9 +52,9 @@ async def allExp(ctx):
     for member in current_guild.members:
         members_map[member.id] = member.name
 
-    #query2 = "UPDATE users SET level = LOG(2, exp)"
-    #cur.execute(query2)
-    #conn.commit()
+    query2 = "UPDATE users SET level = LOG(2, exp)"
+    cur.execute(query2)
+    conn.commit()
     query = "SELECT discord_id, exp, level FROM users WHERE ";
 
     # bad lazy coding
@@ -71,11 +72,11 @@ async def allExp(ctx):
 
     result = ""
     for row in rows:
-        result += str(members_map[row[0]]) + " is level " + str(row[2]) + " has [" + str(row[1]) + "] exp!\n"
+        result += str(members_map[row[0]]) + " is level " + str(row[2]) + " and has [" + str(row[1]) + "] exp!\n"
 
     await ctx.send(f"```ini\n{result}\n```")
 
-@bot.command(name='jokes', help='inside inside jokes')
+@bot.command(name='joke', help='inside inside jokes')
 async def yes(ctx):
     someShit = [
             'HEE HAW',
@@ -92,7 +93,26 @@ async def yes(ctx):
     ]
 
     response = random.choice(someShit)
-    response = '!jokes'
+    await ctx.send(response)
+
+@bot.command(name='magic blue ball', help='Feeling Lucky?')
+async def yes(ctx):
+    someShit = [
+            'Yes',
+            'No',
+            'Maybe',
+            'It is certain',
+            'Sorry, try again',
+            'Impossible',
+            'Probable',
+            'Unlikely',
+            '*Heads*',
+            '*TAILS*',
+            'Nah',
+            'Yeahhh',
+    ]
+
+    response = random.choice(someShit)
     await ctx.send(response)
 
 @bot.command(name='yes', help='yes')
