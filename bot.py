@@ -32,7 +32,7 @@ async def on_ready():
 
     for guild in bot.guilds:
         for member in guild.members:
-            print(member, str(member.id))
+            #print(member, str(member.id))
             cur.execute("""
                     INSERT INTO users (discord_id, exp, gold)
                     VALUES
@@ -43,22 +43,30 @@ async def on_ready():
 
 @bot.command(name='allExp', help='Shows server members\' exp')
 async def allExp(ctx):
-    print(ctx.__dict__)
-    members_map = {}
-    for guild in bot.guilds:
-        for member in guild.members:
-            members_map[member.id] = member.name
+    # ctx.mesage.guild does not contain members, but it does contain the context's guild ID
+    print(ctx.message.guild.id)
 
-    cur.execute("""
-        SELECT 
-            discord_id, exp 
-        FROM 
-            users
-        ORDER BY 
-            exp DESC
-    """)
-    conn.commit()
+    current_guild = next((g for g in bot.guilds if g.id == ctx.message.guild.id), None)
+
+    members_map = {}
+    for member in current_guild.members:
+        members_map[member.id] = member
+
+    query = "SELECT discord_id, exp FROM users WHERE ";
+
+    # bad lazy coding
+    first_time = True;
+    for member in current_guild.members:
+        if first_time:
+            first_time = False;
+        else:
+            query += ' OR ';
+        query += 'discord_id = ' + str(member.id)
+    query += "ORDER BY exp DESC";
+
+    cur.execute(query)
     rows = cur.fetchall()
+
     result = ""
     for row in rows:
         result += str(members_map[row[0]]) + " has [" + str(row[1]) + "] exp!\n"
@@ -120,7 +128,7 @@ async def on_command_error(ctx, error):
 async def on_message(ctx):
     with open('message.log', 'a') as f:
         f.write(f'{ctx.author}: {ctx.content}\n')
-    print(f'{ctx.author}: {ctx.content}')
+    #print(f'{ctx.author}: {ctx.content}')
     cur.execute("""
         UPDATE users
         SET exp = exp + 1
