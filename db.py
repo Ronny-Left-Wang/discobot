@@ -17,8 +17,9 @@ try:
     CREATE TABLE users (
         user_id SERIAL PRIMARY KEY,
         discord_id BIGINT UNIQUE NOT NULL,
-        exp INTEGER NOT NULL,
-        gold INTEGER NOT NULL
+        exp BIGINT NOT NULL,
+        gold BIGINT NOT NULL,
+        level INTEGER NOT NULL
     )""")
     conn.commit()
     #record = cursor.fetchone()

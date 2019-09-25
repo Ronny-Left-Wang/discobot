@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from discord.ext import commands
 from discord.ext.commands import CommandNotFound
 
-
 try:
     conn = psycopg2.connect(
             user = "wang",
@@ -34,9 +33,9 @@ async def on_ready():
         for member in guild.members:
             #print(member, str(member.id))
             cur.execute("""
-                    INSERT INTO users (discord_id, exp, gold)
+                    INSERT INTO users (discord_id, exp, gold, level)
                     VALUES
-                    (""" + str(member.id) + """, 0, 0)
+                    (""" + str(member.id) + """, 0, 0, 0)
                     ON CONFLICT DO NOTHING
             """)
             conn.commit()
@@ -44,15 +43,18 @@ async def on_ready():
 @bot.command(name='allExp', help='Shows server members\' exp')
 async def allExp(ctx):
     # ctx.mesage.guild does not contain members, but it does contain the context's guild ID
-    print(ctx.message.guild.id)
+    # print(ctx.message.guild.id)
 
-    current_guild = next((g for g in bot.guilds if g.id == ctx.message.guild.id), None)
+    current_guild = next((g for g in bot.guilds if g.id == ctx.guild.id), None)
 
     members_map = {}
     for member in current_guild.members:
-        members_map[member.id] = member
+        members_map[member.id] = member.name
 
-    query = "SELECT discord_id, exp FROM users WHERE ";
+    #query2 = "UPDATE users SET level = LOG(2, exp)"
+    #cur.execute(query2)
+    #conn.commit()
+    query = "SELECT discord_id, exp, level FROM users WHERE ";
 
     # bad lazy coding
     first_time = True;
@@ -69,8 +71,29 @@ async def allExp(ctx):
 
     result = ""
     for row in rows:
-        result += str(members_map[row[0]]) + " has [" + str(row[1]) + "] exp!\n"
+        result += str(members_map[row[0]]) + " is level " + str(row[2]) + " has [" + str(row[1]) + "] exp!\n"
+
     await ctx.send(f"```ini\n{result}\n```")
+
+@bot.command(name='jokes', help='inside inside jokes')
+async def yes(ctx):
+    someShit = [
+            'HEE HAW',
+            'HuDANG',
+            'brown bastard',
+            'stuipd',
+            'bwain ndamg',
+            'speaking!',
+            'good!',
+            'good noe',
+            'Illegal',
+            'two deaths tonight',
+            'here it comes',
+    ]
+
+    response = random.choice(someShit)
+    response = '!jokes'
+    await ctx.send(response)
 
 @bot.command(name='yes', help='yes')
 async def yes(ctx):
@@ -108,7 +131,6 @@ async def exp(ctx):
     totalExp = cur.fetchone()[0]
     await ctx.send(f"{ctx.author.name} has {totalExp} exp!")
 
-
 @bot.event
 async def on_error(ctx, *args, **kwargs):
     #print(f'{args[0]}')
@@ -128,7 +150,7 @@ async def on_command_error(ctx, error):
 async def on_message(ctx):
     with open('message.log', 'a') as f:
         f.write(f'{ctx.author}: {ctx.content}\n')
-    #print(f'{ctx.author}: {ctx.content}')
+    print(f'{ctx.author}: {ctx.content}')
     cur.execute("""
         UPDATE users
         SET exp = exp + 1
