@@ -35,7 +35,7 @@ async def on_ready():
             cur.execute("""
                     INSERT INTO users (discord_id, exp, gold, level)
                     VALUES
-                    (""" + str(member.id) + """, 0, 1, 0)
+                    (""" + str(member.id) + """, 1, 1, 1)
                     ON CONFLICT DO NOTHING
             """)
             conn.commit()
@@ -52,9 +52,6 @@ async def allExp(ctx):
     for member in current_guild.members:
         members_map[member.id] = member.name
 
-    query2 = "UPDATE users SET level = LOG(2, exp)"
-    cur.execute(query2)
-    conn.commit()
     query = "SELECT discord_id, exp, level FROM users WHERE ";
 
     # bad lazy coding
@@ -65,14 +62,29 @@ async def allExp(ctx):
         else:
             query += ' OR ';
         query += 'discord_id = ' + str(member.id)
-    query += "ORDER BY exp DESC";
+    query += "ORDER BY level DESC, exp DESC";
 
     cur.execute(query)
     rows = cur.fetchall()
+    print(rows)
+
+    query = """
+        UPDATE users
+        SET level = level + 1,
+            exp = 0
+        WHERE
+            exp >= POWER(2, level)
+    """
+    cur.execute(query)
+    conn.commit()
 
     result = ""
     for row in rows:
-        result += str(members_map[row[0]]) + " is level " + str(row[2]) + " and has [" + str(row[1]) + "] exp!\n"
+        user = str(members_map[row[0]])
+        level = row[2]
+        exp = str(row[1])
+        nextLevel = pow(2, level)
+        result += user + " is level [" + str(level) + "] and has [" + exp + "/" + str(nextLevel) + "] exp!\n"
 
     await ctx.send(f"```ini\n{result}\n```")
 
@@ -95,7 +107,7 @@ async def yes(ctx):
     response = random.choice(someShit)
     await ctx.send(response)
 
-@bot.command(name='magic blue ball', help='Feeling Lucky?')
+@bot.command(name='magicblueball', help='Feeling Lucky?')
 async def yes(ctx):
     someShit = [
             'Yes',
@@ -122,10 +134,9 @@ async def yes(ctx):
     ]
 
     response = random.choice(someShit)
-    print(f'{ctx.author.name} used the !yes command')
     await ctx.send(response)
 
-@bot.command(name='roll', help='Try !roll 2 6')
+@bot.command(name='roll', help='Try !roll 2 6 (rolls 2 dice, both with 6 sides')
 async def roll(ctx, number_of_dice: int, number_of_sides: int):
     dice = [
         str(random.choice(range(1, number_of_sides + 1)))
@@ -144,16 +155,29 @@ async def coinflip(ctx):
 @bot.command(name='exp', help='Returns your exp')
 async def exp(ctx):
     cur.execute("""
-        SELECT exp FROM users
+        SELECT level, exp FROM users
         WHERE discord_id = %s
     """, (ctx.author.id,))
     conn.commit()
-    totalExp = cur.fetchone()[0]
-    await ctx.send(f"{ctx.author.name} has {totalExp} exp!")
+    result = cur.fetchall()
+    level = result[0][0]
+    exp = result[0][1]
+    # if exp >= 2 ^ level (which is target level) level++
+    query = """
+        UPDATE users
+        SET level = level + 1,
+            exp = 0
+        WHERE
+            exp >= POWER(2, level)
+    """
+    cur.execute(query)
+    conn.commit()
+    nextLevel = pow(2, level)
+    await ctx.send(f"```ini\n{ctx.author.name} is level [{level}] and has [{exp}/{nextLevel}] exp!\n```")
 
 @bot.event
 async def on_error(ctx, *args, **kwargs):
-    #print(f'{args[0]}')
+    print(f'{args[0]}')
     with open('err.log', 'a') as f:
         if ctx == 'on_message':
             f.write(f'Unhandled message: {args[0]}\n')
@@ -171,13 +195,24 @@ async def on_message(ctx):
     with open('message.log', 'a') as f:
         f.write(f'{ctx.author}: {ctx.content}\n')
     print(f'{ctx.author}: {ctx.content}')
-    cur.execute("""
+
+    query = """
         UPDATE users
         SET exp = exp + 1
         WHERE discord_id = %s
-        RETURNING exp
-    """, (ctx.author.id,))
+    """
+    cur.execute(query, (ctx.author.id,))
     conn.commit()
+
+    # if exp >= 2 ^ level (which is target level) level++
+    query = """
+        UPDATE users
+        SET level = level + 1,
+            exp = 0
+        WHERE
+            exp >= POWER(2, level)
+    """
+
     await bot.process_commands(ctx)
 
 bot.run(TOKEN)

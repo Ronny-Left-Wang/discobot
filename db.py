@@ -18,8 +18,8 @@ try:
         user_id SERIAL PRIMARY KEY,
         discord_id BIGINT UNIQUE NOT NULL,
         exp BIGINT NOT NULL,
-        gold BIGINT NOT NULL,
-        level INTEGER NOT NULL
+        level INTEGER NOT NULL,
+        gold BIGINT NOT NULL
     )""")
     conn.commit()
     #record = cursor.fetchone()
