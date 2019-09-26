@@ -84,7 +84,7 @@ async def allExp(ctx):
         level = row[2]
         exp = str(row[1])
         nextLevel = pow(2, level)
-        result += user + " is level [" + str(level) + "] and has [" + exp + "/" + str(nextLevel) + "] exp!\n"
+        result += "[" + user + "] is level [" + str(level) + "] and has [" + exp + "/" + str(nextLevel) + "] exp!\n"
 
     await ctx.send(f"```ini\n{result}\n```")
 
@@ -173,7 +173,7 @@ async def exp(ctx):
     cur.execute(query)
     conn.commit()
     nextLevel = pow(2, level)
-    await ctx.send(f"```ini\n{ctx.author.name} is level [{level}] and has [{exp}/{nextLevel}] exp!\n```")
+    await ctx.send(f"```ini\n[{ctx.author.name}] is level [{level}] and has [{exp}/{nextLevel}] exp!\n```")
 
 @bot.event
 async def on_error(ctx, *args, **kwargs):
