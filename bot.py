@@ -52,6 +52,16 @@ async def allExp(ctx):
     for member in current_guild.members:
         members_map[member.id] = member.name
 
+    query = """
+        UPDATE users
+        SET level = level + 1,
+            exp = 0
+        WHERE
+            exp >= POWER(2, level)
+    """
+    cur.execute(query)
+    conn.commit()
+
     query = "SELECT discord_id, exp, level FROM users WHERE ";
 
     # bad lazy coding
@@ -66,7 +76,6 @@ async def allExp(ctx):
 
     cur.execute(query)
     rows = cur.fetchall()
-    print(rows)
 
     query = """
         UPDATE users
@@ -78,13 +87,16 @@ async def allExp(ctx):
     cur.execute(query)
     conn.commit()
 
-    result = ""
+    result = "Rank\n"
+    rank = 0
     for row in rows:
         user = str(members_map[row[0]])
         level = row[2]
         exp = str(row[1])
         nextLevel = pow(2, level)
-        result += "[" + user + "] is level [" + str(level) + "] and has [" + exp + "/" + str(nextLevel) + "] exp!\n"
+        rank += 1
+
+        result += str(rank) + ": [" + user + "] is level [" + str(level) + "] and has [" + exp + "/" + str(nextLevel) + "] exp!\n"
 
     await ctx.send(f"```ini\n{result}\n```")
 
@@ -102,6 +114,11 @@ async def yes(ctx):
             'Illegal',
             'two deaths tonight',
             'here it comes',
+            'oh no',
+            'joke on u',
+            'u gonna fuk on me?',
+            'me me me?',
+            'how dare u imply i relieve myself to ink and paper',
     ]
 
     response = random.choice(someShit)
