@@ -31,7 +31,7 @@ async def on_ready():
 
     for guild in bot.guilds:
         for member in guild.members:
-            #print(member, str(member.id))
+            # print(member, str(member.id))
             query = """ INSERT INTO users (discord_id, exp, gold, level)
                     VALUES (""" + str(member.id) + """, 1, 1, 1)
                     ON CONFLICT DO NOTHING
@@ -39,6 +39,7 @@ async def on_ready():
             cur.execute(query)
             conn.commit()
 
+# Displays leaderboad of exp for the server command was called in
 @bot.command(name='allexp', help='Shows server members\' exp')
 async def allExp(ctx):
     # ctx.message.content = ctx.message.content.replace(" ", "")
@@ -56,12 +57,12 @@ async def allExp(ctx):
     query = "SELECT discord_id, exp, level FROM users WHERE "
 
     # bad lazy coding
-    first_time = True;
+    first_time = True
     for member in current_guild.members:
         if first_time:
             first_time = False
         else:
-            query += ' OR ';
+            query += ' OR '
         query += 'discord_id = ' + str(member.id)
     query += "ORDER BY level DESC, exp DESC"
 
@@ -83,6 +84,7 @@ async def allExp(ctx):
 
     await ctx.send(f"```ini\n{result}\n```")
 
+# Inside jokes
 @bot.command(name='joke', help='inside inside jokes')
 async def yes(ctx):
     someShit = [
@@ -113,6 +115,7 @@ async def yes(ctx):
     response = random.choice(someShit)
     await ctx.send(response)
 
+# Responds with random answers
 @bot.command(name='magicblueball', help='Feeling Lucky?')
 async def yes(ctx):
     someShit = [
@@ -133,10 +136,12 @@ async def yes(ctx):
     response = random.choice(someShit)
     await ctx.send(response)
 
+# yes
 @bot.command(name='yes', help='yes')
 async def yes(ctx):
     await ctx.send('Yes')
 
+# Rolls dice, user can input an amount of dice to roll and how many sides all will have.
 @bot.command(name='roll', help='Try !roll 2 6 (rolls 2 dice, both with 6 sides')
 async def roll(ctx, number_of_dice: int, number_of_sides: int):
     dice = [
@@ -145,6 +150,7 @@ async def roll(ctx, number_of_dice: int, number_of_sides: int):
     ]
     await ctx.send(', '.join(dice))
 
+# flips a coin
 @bot.command(name='coinflip', help='Flips a coin')
 async def coinflip(ctx):
     sides = [
@@ -153,9 +159,23 @@ async def coinflip(ctx):
     ]
     await ctx.send(random.choice(sides))
 
-@bot.command(name='exp', help='Returns your exp')
+
+# holy grail magnum opus
+@bot.command(name='stats', help='Displays your stats')
+async def stats(ctx):
+    member = ctx.author.name
+
+    await ctx.send(f"""
+            > ***__{member}'s stats__***
+            > Level: level
+            > Total Exp: totalexp
+            > Current Exp: [current/needed]
+            > Gold: broke
+            """)
+
+# Displays user's exp
+@bot.command(name='exp', help='Displays your exp')
 async def exp(ctx):
-    # create  stats?
     query = """
         SELECT level, exp FROM users
         WHERE discord_id = %s
@@ -172,6 +192,9 @@ async def exp(ctx):
     targetExp = pow(2, level)
     await ctx.send(f"```ini\n[{ctx.author.name}] is level [{level}] and has [{exp}/{targetExp}] exp!\n```")
 
+"""
+#garbage
+what does this even do wtf garbage
 @bot.event
 async def on_error(ctx, *args, **kwargs):
     print(f'{args[0]}')
@@ -180,13 +203,16 @@ async def on_error(ctx, *args, **kwargs):
             f.write(f'Unhandled message: {args[0]}\n')
         else:
             raise
+"""
 
+# Default response for no command... need to find if discord has built in option
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, CommandNotFound):
         await ctx.send("No such command")
         # raise error
 
+# Writes to message.log, gives exp to author, and checks if they can levelUp
 @bot.event
 async def on_message(ctx):
     with open('message.log', 'a') as f:
