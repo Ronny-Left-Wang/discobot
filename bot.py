@@ -45,6 +45,7 @@ async def allExp(ctx):
     # ctx.message.content = ctx.message.content.replace(" ", "")
     # ctx.mesage.guild does not contain members, but it does contain the context's guild ID
     # print(ctx.message.guild.id)
+    author_id = ctx.author.id
 
     current_guild = next((g for g in bot.guilds if g.id == ctx.guild.id), None)
 
@@ -52,7 +53,22 @@ async def allExp(ctx):
     for member in current_guild.members:
         members_map[member.id] = member.name
 
-    levelUp()
+    query = """
+        SELECT level, exp FROM users
+        WHERE discord_id = %s
+        """
+
+    cur.execute(query, (author_id,))
+    conn.commit()
+    result = cur.fetchall()
+
+    level = result[0][0]
+    curr_exp = result[0][1]
+    target_exp = pow(2, level)
+
+    # uncommenting this will make it so when someone does !allexp, something like [1/1]
+    # or [2/2] doesn't happen. but there has to be a better way. also EXP has the same problem
+    # level_up(author_id, curr_exp, target_exp)
 
     query = "SELECT discord_id, exp, level FROM users WHERE "
 
@@ -69,18 +85,16 @@ async def allExp(ctx):
     cur.execute(query)
     rows = cur.fetchall()
 
-    levelUp()
-
     result = "Rank\n"
     rank = 0
     for row in rows:
         user = str(members_map[row[0]])
         level = row[2]
         exp = str(row[1])
-        targetExp = pow(2, level)
+        target_exp = pow(2, level)
         rank += 1
 
-        result += str(rank) + ": [" + user + "] is level [" + str(level) + "] and has [" + exp + "/" + str(targetExp) + "] exp!\n"
+        result += str(rank) + ": [" + user + "] is level [" + str(level) + "] and has [" + exp + "/" + str(target_exp) + "] exp!\n"
 
     await ctx.send(f"```ini\n{result}\n```")
 
@@ -92,24 +106,19 @@ async def yes(ctx):
             'HuDANG',
             'brown bastard',
             'stuipd',
-            'bwain ndamg',
             'speaking!',
-            'the time has come, and so have I',
-            'good!',
             'good noe',
             'Illegal',
             'two deaths tonight',
             'here it comes',
             'oh no',
-            'joke on u',
             'how dare u imply i relieve myself to ink and paper',
-            'jerkin it',
-            'u wanna get outta here?',
             'THEN A PIANO FELL ON MY HEAD',
             'then i got sucked into a wurm hole',
             'hwat.',
             'yinkies',
-            'ee-no-mus',
+            'Hugh, Mungus',
+            'CLEARLY OF THE WEAKEST'
     ]
 
     response = random.choice(someShit)
@@ -164,80 +173,113 @@ async def coinflip(ctx):
 @bot.command(name='stats', help='Displays your stats')
 async def stats(ctx):
     member = ctx.author.name
+    member_id = ctx.author.id
+
+    query = """
+        SELECT level, exp, gold FROM users
+        WHERE discord_id = %s
+    """
+
+    cur.execute(query, (member_id,))
+    result = cur.fetchall()
+
+    level = result[0][0]
+    curr_exp = result[0][1]
+    gold = result[0][2]
+    target_exp = pow(2, level)
+
+    level_up(member_id, curr_exp, target_exp)
+
+    total_exp = pow(2, level) + curr_exp - 2
 
     await ctx.send(f"""
             > ***__{member}'s stats__***
-            > Level: level
-            > Total Exp: totalexp
-            > Current Exp: [current/needed]
-            > Gold: broke
+            > Level: {level}
+            > Total Exp: {total_exp}
+            > Current Exp: {curr_exp}/{target_exp}
+            > Gold: {gold}
             """)
 
 # Displays user's exp
 @bot.command(name='exp', help='Displays your exp')
 async def exp(ctx):
-    query = """
-        SELECT level, exp FROM users
-        WHERE discord_id = %s
-    """
-    cur.execute(query, (ctx.author.id,))
-    conn.commit()
+        author_id = ctx.author.id
 
-    result = cur.fetchall()
-    level = result[0][0]
-    exp = result[0][1]
+        query = """
+            SELECT level, exp FROM users
+            WHERE discord_id = %s
+        """
+        cur.execute(query, (ctx.author.id,))
+        conn.commit()
 
-    levelUp()
+        result = cur.fetchall()
+        level = result[0][0]
+        curr_exp = result[0][1]
+        target_exp = pow(2, level)
 
-    targetExp = pow(2, level)
-    await ctx.send(f"```ini\n[{ctx.author.name}] is level [{level}] and has [{exp}/{targetExp}] exp!\n```")
+        level_up(author_id, curr_exp, target_exp)
 
-"""
-#garbage
-what does this even do wtf garbage
+        await ctx.send(f"```ini\n[{ctx.author.name}] is level [{level}] and has [{curr_exp}/{target_exp}] exp!\n```")
+
+# idk supposed to make errors pop up? huh?
 @bot.event
 async def on_error(ctx, *args, **kwargs):
-    print(f'{args[0]}')
-    with open('err.log', 'a') as f:
-        if ctx == 'on_message':
-            f.write(f'Unhandled message: {args[0]}\n')
-        else:
-            raise
-"""
+    print(f'{args}')
+    raise
 
 # Default response for no command... need to find if discord has built in option
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, CommandNotFound):
         await ctx.send("No such command")
-        # raise error
+        raise error
 
-# Writes to message.log, gives exp to author, and checks if they can levelUp
+# Writes to message.log, gives exp to author, and checks if they can level_up
 @bot.event
 async def on_message(ctx):
-    with open('message.log', 'a') as f:
-        f.write(f'{ctx.author}: {ctx.content}\n')
-    print(f'{ctx.author}: {ctx.content}')
+    author = ctx.author
+    author_id = ctx.author.id
+    content = ctx.content
 
-    expUp(ctx.author.id)
-    levelUp()
+    with open('message.log', 'a') as f:
+        f.write(f'{author}: {content}\n')
+    print(f'{author}: {content}')
+
+    query = """
+        SELECT level, exp FROM users
+        WHERE discord_id = %s
+        """
+
+    cur.execute(query, (author_id,))
+    conn.commit()
+    result = cur.fetchall()
+
+    level = result[0][0]
+    curr_exp = result[0][1]
+    target_exp = pow(2, level)
+
+    exp_up(author_id)
+    level_up(author_id, curr_exp, target_exp)
 
     await bot.process_commands(ctx)
 
 # If exp >= 2 ^ level (which is target level) level++
-def levelUp():
+def level_up(author_id, curr_exp, target_exp):
+
     query = """
         UPDATE users
         SET level = level + 1,
             exp = 0
         WHERE
-            exp >= POWER(2, level)
+            discord_id = %s
     """
-    cur.execute(query)
-    conn.commit()
+
+    if (curr_exp >= target_exp):
+        cur.execute(query, (author_id,))
+        conn.commit()
 
 # Gain exp on message
-def expUp(author_id):
+def exp_up(author_id):
     query = """
         UPDATE users
         SET exp = exp + 1
