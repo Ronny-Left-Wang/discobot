@@ -32,8 +32,8 @@ async def on_ready():
     for guild in bot.guilds:
         for member in guild.members:
             # print(member, str(member.id))
-            query = """ INSERT INTO users (discord_id, exp, gold, level)
-                    VALUES (""" + str(member.id) + """, 1, 1, 1)
+            query = """ INSERT INTO users (discord_id, exp, gold, level, stage)
+                    VALUES (""" + str(member.id) + """, 1, 1, 1, 1)
                     ON CONFLICT DO NOTHING
                     """
             cur.execute(query)
@@ -183,14 +183,17 @@ async def stats(ctx):
     cur.execute(query, (member_id,))
     result = cur.fetchall()
 
+    # The base to determine exp needed for leveling up
+    base = 2
+
     level = result[0][0]
     curr_exp = result[0][1]
     gold = result[0][2]
-    target_exp = pow(2, level)
+    target_exp = pow(base, level)
 
     level_up(member_id, curr_exp, target_exp)
 
-    total_exp = pow(2, level) + curr_exp - 2
+    total_exp = pow(base, level) + curr_exp - base
 
     await ctx.send(f"""
             > ***__{member}'s stats__***
@@ -234,6 +237,20 @@ async def on_command_error(ctx, error):
         await ctx.send("No such command")
         raise error
 
+@bot.command(name='travel', help='Your journey begins...')
+async def travel(ctx):
+    print("travel")
+    await ctx.send("hello")
+    await ctx.send("Your journey begins, {member}")
+
+@bot.command(name='fetchMessages', help='writes all messages from channel to a txt file')
+async def fetch_Messages(ctx):
+    channel = ctx.channel
+    with open('%s_messages.log' % channel, 'w') as f:
+        async for message in ctx.channel.history(oldest_first=True, limit=1000000):
+            f.write(f'{message.author}: {message.content}\n')
+    await ctx.send("Messages saved to %s_messages.log" % channel)
+
 # Writes to message.log, gives exp to author, and checks if they can level_up
 @bot.event
 async def on_message(ctx):
@@ -244,6 +261,7 @@ async def on_message(ctx):
     with open('message.log', 'a') as f:
         f.write(f'{author}: {content}\n')
     print(f'{author}: {content}')
+
 
     query = """
         SELECT level, exp FROM users
@@ -261,7 +279,14 @@ async def on_message(ctx):
     exp_up(author_id)
     level_up(author_id, curr_exp, target_exp)
 
+    if (ctx.content.lower() == "!travel"):
+        beginStory(author)
+
     await bot.process_commands(ctx)
+
+
+def beginStory(author):
+    print(f"{author} has began a story!")
 
 # If exp >= 2 ^ level (which is target level) level++
 def level_up(author_id, curr_exp, target_exp):

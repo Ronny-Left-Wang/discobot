@@ -19,7 +19,8 @@ try:
         discord_id BIGINT UNIQUE NOT NULL,
         exp BIGINT NOT NULL,
         level INTEGER NOT NULL,
-        gold BIGINT NOT NULL
+        gold BIGINT NOT NULL,
+        stage INTEGER NOT NULL
     )""")
     conn.commit()
     #record = cursor.fetchone()
