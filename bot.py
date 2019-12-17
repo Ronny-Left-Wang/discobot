@@ -41,7 +41,7 @@ async def on_ready():
 
 # Displays leaderboad of exp for the server command was called in
 @bot.command(name='allexp', help='Shows server members\' exp')
-async def allExp(ctx):
+async def all_exp(ctx):
     # ctx.message.content = ctx.message.content.replace(" ", "")
     # ctx.mesage.guild does not contain members, but it does contain the context's guild ID
     # print(ctx.message.guild.id)
@@ -100,7 +100,7 @@ async def allExp(ctx):
 
 # Inside jokes
 @bot.command(name='joke', help='inside inside jokes')
-async def yes(ctx):
+async def joke(ctx):
     someShit = [
             'HEE HAW',
             'HuDANG',
@@ -126,7 +126,7 @@ async def yes(ctx):
 
 # Responds with random answers
 @bot.command(name='magicblueball', help='Feeling Lucky?')
-async def yes(ctx):
+async def magicblueball(ctx):
     someShit = [
             'Yes',
             'No',
